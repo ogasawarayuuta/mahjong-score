@@ -11,7 +11,7 @@
     header { background: #1a5c2a; color: white; text-align: center; padding: 16px; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
 
     .tab-menu { display: flex; justify-content: space-around; background: #fff; border-bottom: 2px solid #1a5c2a; }
-    .tab-menu button { flex: 1; padding: 12px 4px; border: none; background: none; font-size: 11px; cursor: pointer; color: #666; font-weight: bold; white-space: nowrap; }
+    .tab-menu button { flex: 1; padding: 12px 2px; border: none; background: none; font-size: 10px; cursor: pointer; color: #666; font-weight: bold; white-space: nowrap; }
     .tab-menu button.active { color: #1a5c2a; border-bottom: 3px solid #1a5c2a; }
 
     .tab-content { display: none; padding: 16px 12px; max-width: 1000px; margin: 0 auto; }
@@ -33,6 +33,10 @@
     input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 14px; -webkit-appearance: none; appearance: none; }
     .btn { width: 100%; padding: 14px; background: #1a5c2a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
     .btn:active { background: #14481f; }
+    .btn-session { background: #e67e22; margin-bottom: 10px; }
+    .btn-session:active { background: #ca6f1e; }
+    .btn-end { background: #95a5a6; margin-top: 8px; }
+    .btn-end:active { background: #7f8c8d; }
     .btn-small { width: auto; padding: 8px 16px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; }
     .btn-edit { background: #e67e22; }
     .btn-del { background: #c0392b; }
@@ -62,7 +66,6 @@
     .btn-cancel { background: #95a5a6; }
     .btn-save { background: #1a5c2a; }
 
-    /* 個人成績 */
     .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
     .stat-box { background: #f9f9f9; border-radius: 10px; padding: 14px; text-align: center; }
     .stat-box .stat-label { font-size: 12px; color: #999; margin-bottom: 6px; }
@@ -80,6 +83,24 @@
 
     .chart-container { position: relative; width: 100%; height: 250px; }
 
+    .session-badge { display: inline-block; background: #e8f5e9; color: #1a5c2a; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: bold; margin-bottom: 16px; }
+    .session-badge.inactive { background: #f5f5f5; color: #999; }
+
+    .session-block { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; overflow: hidden; }
+    .session-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 20px; cursor: pointer; background: #1a5c2a; color: white; }
+    .session-header h3 { font-size: 15px; }
+    .session-header .session-meta { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+    .session-toggle { font-size: 18px; }
+    .session-body { display: none; padding: 16px; }
+    .session-body.open { display: block; }
+    .session-ranking-row { display: grid; grid-template-columns: 40px 1fr 70px; align-items: center; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px; font-size: 14px; background: #f9f9f9; }
+    .session-ranking-row.first { background: #e8f5e9; color: #1a5c2a; font-weight: bold; }
+
+    .section-title { font-size: 15px; font-weight: bold; color: #1a5c2a; margin-bottom: 12px; padding-left: 10px; border-left: 4px solid #1a5c2a; }
+
+    .session-live { background: #e8f5e9; border-radius: 12px; padding: 16px; margin-bottom: 20px; border: 2px solid #1a5c2a; }
+    .session-live-title { font-size: 14px; font-weight: bold; color: #1a5c2a; margin-bottom: 12px; }
+
     @media (min-width: 600px) {
       .ranking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
       .score-input-row { grid-template-columns: 1fr 1fr; }
@@ -94,15 +115,39 @@
 <header>🀄 麻雀スコア管理</header>
 
 <div class="tab-menu">
-  <button class="active" onclick="showTab('ranking', this)">🏆 順位</button>
-  <button onclick="showTab('stats', this)">👤 個人成績</button>
+  <button class="active" onclick="showTab('today', this)">📅 今日</button>
+  <button onclick="showTab('ranking', this)">🏆 総合順位</button>
+  <button onclick="showTab('stats', this)">👤 個人</button>
   <button onclick="showTab('input', this)">✏️ 入力</button>
   <button onclick="showTab('players', this)">👥 管理</button>
   <button onclick="showTab('history', this)">📋 履歴</button>
 </div>
 
-<!-- ランキング -->
-<div id="tab-ranking" class="tab-content active">
+<!-- 今日タブ -->
+<div id="tab-today" class="tab-content active">
+  <div class="card">
+    <h2>🎮 セッション管理</h2>
+    <div id="session-badge" class="session-badge inactive">⚪ セッションなし</div>
+    <button class="btn btn-session" onclick="startSession()">🎮 新しいセッションを開始する</button>
+    <button class="btn btn-end" onclick="endSession()">⏹️ セッションを終了する</button>
+    <p style="font-size:12px;color:#999;text-align:center;margin-top:8px;">※徹夜など日付をまたぐ場合はセッションを開始してください</p>
+  </div>
+
+  <div id="session-live-area" style="display:none;">
+    <div class="session-live">
+      <div class="session-live-title">🟢 セッション累積pt順位</div>
+      <div class="ranking-header"><span>順位</span><span>名前</span><span style="text-align:right">pt</span></div>
+      <div id="session-ranking"></div>
+    </div>
+  </div>
+
+  <div id="no-session-area">
+    <p class="no-data">セッションを開始すると<br>累積pt順位がここに表示されます</p>
+  </div>
+</div>
+
+<!-- 総合順位 -->
+<div id="tab-ranking" class="tab-content">
   <div class="ranking-grid">
     <div class="ranking-section">
       <h2>🏅 個人スコア</h2>
@@ -171,12 +216,13 @@
   </div>
 </div>
 
-<!-- 対局履歴 -->
+<!-- 履歴 -->
 <div id="tab-history" class="tab-content">
+  <div id="session-history-container"></div>
   <div id="history-container"></div>
 </div>
 
-<!-- 修正モーダル -->
+<!-- 対局修正モーダル -->
 <div class="modal-overlay" id="edit-modal">
   <div class="modal">
     <h3>✏️ 対局結果を修正</h3>
@@ -189,9 +235,23 @@
   </div>
 </div>
 
+<!-- セッション名編集モーダル -->
+<div class="modal-overlay" id="session-name-modal">
+  <div class="modal">
+    <h3>✏️ セッション名を編集</h3>
+    <label>セッション名</label>
+    <input type="text" id="session-name-input" placeholder="例）4月忘年会麻雀">
+    <p id="session-name-error" style="color:#c0392b;font-size:13px;margin-top:-10px;margin-bottom:10px;display:none;">同じ名前のセッションが既にあります。別の名前にしてください。</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeSessionNameModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveSessionName()">💾 保存する</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, setDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, setDoc, updateDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBAoRkB3_nuUZMAJMVSH2qQftpvKI2rYsA",
@@ -211,6 +271,15 @@
   let editDocId = null;
   let rankChart = null;
   let ptChart = null;
+  let currentSessionId = localStorage.getItem('currentSessionId') || null;
+  let currentSessionStart = localStorage.getItem('currentSessionStart') || null;
+  let currentSessionName = localStorage.getItem('currentSessionName') || null;
+
+  // セッション名編集用
+  let editingSessionId = null;
+  let sessionNames = {}; // sessionId -> name のマップ
+
+  updateSessionUI();
 
   onSnapshot(collection(db, "players"), (snapshot) => {
     players = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -224,7 +293,18 @@
     history = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderHistory();
     renderRanking();
+    renderSessionRanking();
     renderStats();
+  });
+
+  // セッション名をFirestoreで管理
+  onSnapshot(collection(db, "sessionNames"), (snapshot) => {
+    sessionNames = {};
+    snapshot.docs.forEach(d => {
+      sessionNames[d.data().sessionId] = { docId: d.id, name: d.data().name };
+    });
+    renderHistory();
+    updateSessionUI();
   });
 
   window.showTab = function(name, btn) {
@@ -233,6 +313,311 @@
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
     if (name === 'stats') renderStats();
+    if (name === 'today') renderSessionRanking();
+  }
+
+  // デフォルトセッション名生成（○月○日）
+  function getDefaultSessionName() {
+    const now = new Date();
+    return `${now.getMonth() + 1}月${now.getDate()}日`;
+  }
+
+  // 同名チェック
+  function isSessionNameDuplicate(name, excludeSessionId = null) {
+    return Object.entries(sessionNames).some(([sid, obj]) => {
+      if (excludeSessionId && sid === excludeSessionId) return false;
+      return obj.name === name;
+    });
+  }
+
+  // セッション開始
+  window.startSession = async function() {
+    if (currentSessionId) {
+      if (!confirm('新しいセッションを開始しますか？\n現在のセッションは終了されます。')) return;
+    }
+
+    const newSessionId = Date.now().toString();
+    const newSessionStart = new Date().toLocaleString('ja-JP');
+    let defaultName = getDefaultSessionName();
+
+    // 同名チェック → 重複なら連番
+    let finalName = defaultName;
+    let count = 2;
+    while (isSessionNameDuplicate(finalName)) {
+      finalName = `${defaultName}（${count}）`;
+      count++;
+    }
+
+    // Firestoreにセッション名を保存
+    await addDoc(collection(db, "sessionNames"), {
+      sessionId: newSessionId,
+      name: finalName
+    });
+
+    currentSessionId = newSessionId;
+    currentSessionStart = newSessionStart;
+    currentSessionName = finalName;
+    localStorage.setItem('currentSessionId', currentSessionId);
+    localStorage.setItem('currentSessionStart', currentSessionStart);
+    localStorage.setItem('currentSessionName', currentSessionName);
+    updateSessionUI();
+    renderSessionRanking();
+    alert(`✅ セッションを開始しました！\nセッション名：${finalName}`);
+  }
+
+  // セッション終了
+  window.endSession = function() {
+    if (!currentSessionId) { alert('セッションが開始されていません'); return; }
+    if (!confirm('セッションを終了しますか？\n履歴タブにセッション結果が残ります。')) return;
+    currentSessionId = null;
+    currentSessionStart = null;
+    currentSessionName = null;
+    localStorage.removeItem('currentSessionId');
+    localStorage.removeItem('currentSessionStart');
+    localStorage.removeItem('currentSessionName');
+    updateSessionUI();
+    renderSessionRanking();
+    renderHistory();
+    alert('✅ セッションを終了しました！');
+  }
+
+  function updateSessionUI() {
+    const badge = document.getElementById('session-badge');
+    const liveArea = document.getElementById('session-live-area');
+    const noSessionArea = document.getElementById('no-session-area');
+    if (!badge) return;
+
+    // sessionNamesから現在のセッション名を取得
+    const nameObj = currentSessionId ? sessionNames[currentSessionId] : null;
+    const displayName = nameObj ? nameObj.name : currentSessionName || '';
+
+    if (currentSessionId && currentSessionStart) {
+      badge.className = 'session-badge';
+      badge.textContent = `🟢 ${displayName}　${currentSessionStart}〜`;
+      if (liveArea) liveArea.style.display = 'block';
+      if (noSessionArea) noSessionArea.style.display = 'none';
+    } else {
+      badge.className = 'session-badge inactive';
+      badge.textContent = '⚪ セッションなし';
+      if (liveArea) liveArea.style.display = 'none';
+      if (noSessionArea) noSessionArea.style.display = 'block';
+    }
+  }
+
+  // セッション累積pt順位
+  function renderSessionRanking() {
+    updateSessionUI();
+    const el = document.getElementById('session-ranking');
+    if (!el || !currentSessionId) return;
+
+    const sessionGames = history.filter(h => h.sessionId === currentSessionId);
+    if (sessionGames.length === 0) {
+      el.innerHTML = '<p style="text-align:center;color:#999;font-size:13px;padding:16px;">まだ対局がありません</p>';
+      return;
+    }
+
+    const ptMap = {};
+    sessionGames.forEach(h => {
+      h.results.forEach(r => {
+        if (!ptMap[r.name]) ptMap[r.name] = 0;
+        ptMap[r.name] = Math.round((ptMap[r.name] + r.pt) * 10) / 10;
+      });
+    });
+
+    const sorted = Object.entries(ptMap).sort((a, b) => b[1] - a[1]);
+    el.innerHTML = sorted.map(([name, pt], i) => `
+      <div class="ranking-row ${i === 0 ? 'first' : ''}">
+        <span class="rank-num">${i + 1}</span>
+        <span class="player-name">👤 ${name}</span>
+        <span class="pt-value">${pt > 0 ? '+' : ''}${pt}</span>
+      </div>
+    `).join('');
+  }
+
+  // セッション名編集モーダルを開く
+  window.openSessionNameModal = function(sessionId) {
+    editingSessionId = sessionId;
+    const current = sessionNames[sessionId] ? sessionNames[sessionId].name : '';
+    document.getElementById('session-name-input').value = current;
+    document.getElementById('session-name-error').style.display = 'none';
+    document.getElementById('session-name-modal').classList.add('active');
+  }
+
+  window.closeSessionNameModal = function() {
+    document.getElementById('session-name-modal').classList.remove('active');
+    editingSessionId = null;
+  }
+
+  window.saveSessionName = async function() {
+    const name = document.getElementById('session-name-input').value.trim();
+    const errorEl = document.getElementById('session-name-error');
+
+    if (!name) { errorEl.textContent = '名前を入力してください'; errorEl.style.display = 'block'; return; }
+
+    // 同名チェック（自分自身は除外）
+    if (isSessionNameDuplicate(name, editingSessionId)) {
+      errorEl.textContent = '同じ名前のセッションが既にあります。別の名前にしてください。';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    errorEl.style.display = 'none';
+    const nameObj = sessionNames[editingSessionId];
+    if (nameObj) {
+      await updateDoc(doc(db, "sessionNames", nameObj.docId), { name });
+    } else {
+      await addDoc(collection(db, "sessionNames"), { sessionId: editingSessionId, name });
+    }
+
+    // 現在のセッションなら更新
+    if (editingSessionId === currentSessionId) {
+      currentSessionName = name;
+      localStorage.setItem('currentSessionName', name);
+    }
+
+    closeSessionNameModal();
+    alert('✅ セッション名を変更しました！');
+  }
+
+  // 履歴表示
+  function renderHistory() {
+    const container = document.getElementById('history-container');
+    const sessionContainer = document.getElementById('session-history-container');
+
+    const sessionMap = {};
+    const noSession = [];
+
+    [...history].reverse().forEach((h, idx) => {
+      const realIdx = history.length - 1 - idx;
+      if (h.sessionId) {
+        if (!sessionMap[h.sessionId]) sessionMap[h.sessionId] = [];
+        sessionMap[h.sessionId].push({ ...h, realIdx });
+      } else {
+        noSession.push({ ...h, realIdx });
+      }
+    });
+
+    const sessionIds = Object.keys(sessionMap);
+    if (sessionIds.length > 0) {
+      sessionContainer.innerHTML = `
+        <div class="section-title">🎮 セッション履歴</div>
+        ${sessionIds.map(sid => {
+          const games = sessionMap[sid];
+          const firstGame = games[games.length - 1];
+          const lastGame = games[0];
+          const isActive = sid === currentSessionId;
+          const sessionName = sessionNames[sid] ? sessionNames[sid].name : sid;
+
+          const ptMap = {};
+          games.forEach(h => {
+            h.results.forEach(r => {
+              if (!ptMap[r.name]) ptMap[r.name] = 0;
+              ptMap[r.name] = Math.round((ptMap[r.name] + r.pt) * 10) / 10;
+            });
+          });
+          const ranking = Object.entries(ptMap).sort((a, b) => b[1] - a[1]);
+
+          return `
+            <div class="session-block">
+              <div class="session-header" onclick="toggleSession('${sid}')">
+                <div>
+                  <h3>${isActive ? '🟢' : '🎮'} ${sessionName}（全${games.length}局）</h3>
+                  <div class="session-meta">${firstGame.date}〜${lastGame.date}</div>
+                </div>
+                <span class="session-toggle" id="toggle-${sid}">▼</span>
+              </div>
+              <div class="session-body" id="body-${sid}">
+                <div style="margin-bottom:16px;">
+                  <div style="font-size:13px;font-weight:bold;color:#1a5c2a;margin-bottom:8px;">📊 セッション累積pt</div>
+                  ${ranking.map(([name, pt], i) => `
+                    <div class="session-ranking-row ${i === 0 ? 'first' : ''}">
+                      <span class="rank-num">${i + 1}</span>
+                      <span class="player-name">👤 ${name}</span>
+                      <span class="pt-value">${pt > 0 ? '+' : ''}${pt}</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="history-actions" style="justify-content:flex-start;margin-bottom:12px;">
+                  <button class="btn-small btn-edit" onclick="openSessionNameModal('${sid}')">✏️ セッション名を編集</button>
+                </div>
+                <div style="font-size:13px;font-weight:bold;color:#1a5c2a;margin-bottom:8px;">📋 対局一覧</div>
+                ${games.map(h => `
+                  <div style="margin-bottom:12px;">
+                    <table class="history-table">
+                      <thead>
+                        <tr><th colspan="4">${h.date}　ウマ：${h.uma}　オカ：+20</th></tr>
+                        <tr><th>順位</th><th>名前</th><th>点数</th><th>pt</th></tr>
+                      </thead>
+                      <tbody>
+                        ${h.results.map(r => `
+                          <tr>
+                            <td>${r.rank}位</td>
+                            <td>${r.name}</td>
+                            <td>${r.score.toLocaleString()}</td>
+                            <td>${r.pt > 0 ? '+' : ''}${r.pt}</td>
+                          </tr>`).join('')}
+                      </tbody>
+                    </table>
+                    <div class="history-actions">
+                      <button class="btn-small btn-edit" onclick="openEditModal(${h.realIdx})">✏️ 修正</button>
+                      <button class="btn-small btn-del" onclick="deleteHistory('${h.id}')">🗑️ 削除</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+        <hr style="margin:20px 0;border:none;border-top:2px solid #eee;">
+      `;
+    } else {
+      sessionContainer.innerHTML = '';
+    }
+
+    if (noSession.length > 0) {
+      container.innerHTML = `
+        <div class="section-title">📋 通常対局履歴</div>
+        ${noSession.map(h => `
+          <div class="card">
+            <table class="history-table">
+              <thead>
+                <tr><th colspan="4">${h.date}　ウマ：${h.uma}　オカ：+20</th></tr>
+                <tr><th>順位</th><th>名前</th><th>点数</th><th>pt</th></tr>
+              </thead>
+              <tbody>
+                ${h.results.map(r => `
+                  <tr>
+                    <td>${r.rank}位</td>
+                    <td>${r.name}</td>
+                    <td>${r.score.toLocaleString()}</td>
+                    <td>${r.pt > 0 ? '+' : ''}${r.pt}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+            <div class="history-actions">
+              <button class="btn-small btn-edit" onclick="openEditModal(${h.realIdx})">✏️ 修正</button>
+              <button class="btn-small btn-del" onclick="deleteHistory('${h.id}')">🗑️ 削除</button>
+            </div>
+          </div>
+        `).join('')}
+      `;
+    } else if (sessionIds.length === 0) {
+      container.innerHTML = '<div class="card"><p class="no-data">対局履歴がありません</p></div>';
+    } else {
+      container.innerHTML = '';
+    }
+  }
+
+  window.toggleSession = function(sid) {
+    const body = document.getElementById(`body-${sid}`);
+    const toggle = document.getElementById(`toggle-${sid}`);
+    if (body.classList.contains('open')) {
+      body.classList.remove('open');
+      toggle.textContent = '▼';
+    } else {
+      body.classList.add('open');
+      toggle.textContent = '▲';
+    }
   }
 
   function updateStatsSelect() {
@@ -245,13 +630,8 @@
   window.renderStats = function() {
     const name = document.getElementById('stats-player-select').value;
     const container = document.getElementById('stats-content');
+    if (!name) { container.innerHTML = ''; return; }
 
-    if (!name) {
-      container.innerHTML = '';
-      return;
-    }
-
-    // その人の対局履歴を抽出（古い順）
     const myGames = [];
     history.forEach(h => {
       const r = h.results.find(r => r.name === name);
@@ -276,167 +656,73 @@
     const rate4 = Math.round(rank4 / totalGames * 1000) / 10;
 
     container.innerHTML = `
-      <!-- サマリー -->
       <div class="card">
         <h2>📊 成績サマリー</h2>
         <div class="stats-grid">
-          <div class="stat-box">
-            <div class="stat-label">総対局数</div>
-            <div class="stat-value">${totalGames}</div>
-            <div class="stat-sub">局</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">累計pt</div>
-            <div class="stat-value" style="color:${totalPt >= 0 ? '#1a5c2a' : '#c0392b'}">${totalPt > 0 ? '+' : ''}${totalPt}</div>
-            <div class="stat-sub">pt</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">平均順位</div>
-            <div class="stat-value">${avgRank}</div>
-            <div class="stat-sub">位</div>
-          </div>
-          <div class="stat-box">
-            <div class="stat-label">4着回避率</div>
-            <div class="stat-value">${Math.round((1 - rank4 / totalGames) * 1000) / 10}</div>
-            <div class="stat-sub">%</div>
-          </div>
+          <div class="stat-box"><div class="stat-label">総対局数</div><div class="stat-value">${totalGames}</div><div class="stat-sub">局</div></div>
+          <div class="stat-box"><div class="stat-label">累計pt</div><div class="stat-value" style="color:${totalPt >= 0 ? '#1a5c2a' : '#c0392b'}">${totalPt > 0 ? '+' : ''}${totalPt}</div><div class="stat-sub">pt</div></div>
+          <div class="stat-box"><div class="stat-label">平均順位</div><div class="stat-value">${avgRank}</div><div class="stat-sub">位</div></div>
+          <div class="stat-box"><div class="stat-label">4着回避率</div><div class="stat-value">${Math.round((1 - rank4 / totalGames) * 1000) / 10}</div><div class="stat-sub">%</div></div>
         </div>
       </div>
-
-      <!-- 順位率 -->
       <div class="card">
         <h2>🎯 順位率</h2>
         <div class="rank-rate-grid">
-          <div class="rank-rate-box rank1">
-            <div class="rate-label">🥇 1位</div>
-            <div class="rate-value">${rate1}%</div>
-            <div style="font-size:11px;margin-top:2px;">${rank1}回</div>
-          </div>
-          <div class="rank-rate-box rank2">
-            <div class="rate-label">🥈 2位</div>
-            <div class="rate-value">${rate2}%</div>
-            <div style="font-size:11px;margin-top:2px;">${rank2}回</div>
-          </div>
-          <div class="rank-rate-box rank3">
-            <div class="rate-label">🥉 3位</div>
-            <div class="rate-value">${rate3}%</div>
-            <div style="font-size:11px;margin-top:2px;">${rank3}回</div>
-          </div>
-          <div class="rank-rate-box rank4">
-            <div class="rate-label">💀 4位</div>
-            <div class="rate-value">${rate4}%</div>
-            <div style="font-size:11px;margin-top:2px;">${rank4}回</div>
-          </div>
+          <div class="rank-rate-box rank1"><div class="rate-label">🥇 1位</div><div class="rate-value">${rate1}%</div><div style="font-size:11px;margin-top:2px;">${rank1}回</div></div>
+          <div class="rank-rate-box rank2"><div class="rate-label">🥈 2位</div><div class="rate-value">${rate2}%</div><div style="font-size:11px;margin-top:2px;">${rank2}回</div></div>
+          <div class="rank-rate-box rank3"><div class="rate-label">🥉 3位</div><div class="rate-value">${rate3}%</div><div style="font-size:11px;margin-top:2px;">${rank3}回</div></div>
+          <div class="rank-rate-box rank4"><div class="rate-label">💀 4位</div><div class="rate-value">${rate4}%</div><div style="font-size:11px;margin-top:2px;">${rank4}回</div></div>
         </div>
       </div>
-
-      <!-- 順位推移グラフ -->
       <div class="card">
         <h2>📈 順位推移</h2>
-        <div class="chart-container">
-          <canvas id="rankChart"></canvas>
-        </div>
+        <div class="chart-container"><canvas id="rankChart"></canvas></div>
       </div>
-
-      <!-- pt推移グラフ -->
       <div class="card">
         <h2>💹 累計pt推移</h2>
-        <div class="chart-container">
-          <canvas id="ptChart"></canvas>
-        </div>
+        <div class="chart-container"><canvas id="ptChart"></canvas></div>
       </div>
     `;
 
-    // 順位推移グラフ
     if (rankChart) rankChart.destroy();
-    const rankCtx = document.getElementById('rankChart').getContext('2d');
-    rankChart = new Chart(rankCtx, {
+    rankChart = new Chart(document.getElementById('rankChart').getContext('2d'), {
       type: 'line',
       data: {
         labels: myGames.map((g, i) => `${i + 1}局`),
         datasets: [{
-          label: '順位',
           data: myGames.map(g => g.rank),
           borderColor: '#1a5c2a',
           backgroundColor: 'rgba(26,92,42,0.1)',
-          pointBackgroundColor: myGames.map(g => {
-            if (g.rank === 1) return '#f39c12';
-            if (g.rank === 2) return '#27ae60';
-            if (g.rank === 3) return '#2980b9';
-            return '#c0392b';
-          }),
-          pointRadius: 6,
-          tension: 0.3,
-          fill: true,
+          pointBackgroundColor: myGames.map(g => g.rank === 1 ? '#f39c12' : g.rank === 2 ? '#27ae60' : g.rank === 3 ? '#2980b9' : '#c0392b'),
+          pointRadius: 6, tension: 0.3, fill: true,
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            reverse: true,
-            min: 1,
-            max: 4,
-            ticks: {
-              stepSize: 1,
-              callback: v => `${v}位`
-            }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.raw}位`
-            }
-          }
-        }
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { reverse: true, min: 1, max: 4, ticks: { stepSize: 1, callback: v => `${v}位` } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}位` } } }
       }
     });
 
-    // 累計pt推移グラフ
     if (ptChart) ptChart.destroy();
     let cumPt = 0;
-    const cumPts = myGames.map(g => {
-      cumPt = Math.round((cumPt + g.pt) * 10) / 10;
-      return cumPt;
-    });
-
-    const ptCtx = document.getElementById('ptChart').getContext('2d');
-    ptChart = new Chart(ptCtx, {
+    const cumPts = myGames.map(g => { cumPt = Math.round((cumPt + g.pt) * 10) / 10; return cumPt; });
+    ptChart = new Chart(document.getElementById('ptChart').getContext('2d'), {
       type: 'line',
       data: {
         labels: myGames.map((g, i) => `${i + 1}局`),
         datasets: [{
-          label: '累計pt',
           data: cumPts,
           borderColor: '#2980b9',
           backgroundColor: 'rgba(41,128,185,0.1)',
           pointBackgroundColor: cumPts.map(v => v >= 0 ? '#27ae60' : '#c0392b'),
-          pointRadius: 5,
-          tension: 0.3,
-          fill: true,
+          pointRadius: 5, tension: 0.3, fill: true,
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          y: {
-            ticks: {
-              callback: v => `${v}pt`
-            }
-          }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: ctx => `${ctx.raw > 0 ? '+' : ''}${ctx.raw}pt`
-            }
-          }
-        }
+        responsive: true, maintainAspectRatio: false,
+        scales: { y: { ticks: { callback: v => `${v}pt` } } },
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw > 0 ? '+' : ''}${ctx.raw}pt` } } }
       }
     });
   }
@@ -445,9 +731,7 @@
     const name = document.getElementById('player-name-input').value.trim();
     if (!name) return alert('名前を入力してください');
     if (players.find(p => p.name === name)) return alert('同じ名前が既に登録されています');
-    await addDoc(collection(db, "players"), {
-      name, totalPt: 0, bestScore: 0, games: 0, tops: 0, fourths: 0
-    });
+    await addDoc(collection(db, "players"), { name, totalPt: 0, bestScore: 0, games: 0, tops: 0, fourths: 0 });
     document.getElementById('player-name-input').value = '';
   }
 
@@ -458,10 +742,7 @@
 
   function renderPlayerList() {
     const ul = document.getElementById('player-list');
-    if (players.length === 0) {
-      ul.innerHTML = '<p class="no-data">プレイヤーが登録されていません</p>';
-      return;
-    }
+    if (players.length === 0) { ul.innerHTML = '<p class="no-data">プレイヤーが登録されていません</p>'; return; }
     ul.innerHTML = players.map(p => {
       const avoidRate = p.games > 0 ? Math.round((1 - p.fourths / p.games) * 1000) / 10 : '-';
       return `<li>
@@ -482,7 +763,7 @@
     for (let i = 0; i < 4; i++) {
       html += `
         <div>
-          <label>プレイヤー ${i+1}</label>
+          <label>プレイヤー ${i + 1}</label>
           <select id="player-sel-${i}">
             ${players.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
           </select>
@@ -523,7 +804,7 @@
       const score = parseInt(document.getElementById(`score-${i}`).value);
       if (isNaN(score)) {
         alertBox.style.display = 'block';
-        alertBox.textContent = `プレイヤー${i+1}の点数を入力してください`;
+        alertBox.textContent = `プレイヤー${i + 1}の点数を入力してください`;
         return;
       }
       entries.push({ name, score });
@@ -548,7 +829,9 @@
     const date = new Date().toLocaleDateString('ja-JP');
 
     await addDoc(collection(db, "history"), {
-      date, uma: umaStr, results, createdAt: Date.now()
+      date, uma: umaStr, results,
+      createdAt: Date.now(),
+      sessionId: currentSessionId || null
     });
 
     for (const e of results) {
@@ -616,38 +899,6 @@
         }).join('');
   }
 
-  function renderHistory() {
-    const reversed = [...history].reverse();
-    const container = document.getElementById('history-container');
-    if (reversed.length === 0) {
-      container.innerHTML = '<div class="card"><p class="no-data">対局履歴がありません</p></div>';
-      return;
-    }
-    container.innerHTML = reversed.map((h, idx) => `
-      <div class="card">
-        <table class="history-table">
-          <thead>
-            <tr><th colspan="4">${h.date}　ウマ：${h.uma}　オカ：+20</th></tr>
-            <tr><th>順位</th><th>名前</th><th>点数</th><th>pt</th></tr>
-          </thead>
-          <tbody>
-            ${h.results.map(r => `
-              <tr>
-                <td>${r.rank}位</td>
-                <td>${r.name}</td>
-                <td>${r.score.toLocaleString()}</td>
-                <td>${r.pt > 0 ? '+' : ''}${r.pt}</td>
-              </tr>`).join('')}
-          </tbody>
-        </table>
-        <div class="history-actions">
-          <button class="btn-small btn-edit" onclick="openEditModal(${reversed.length - 1 - idx})">✏️ 修正</button>
-          <button class="btn-small btn-del" onclick="deleteHistory('${h.id}')">🗑️ 削除</button>
-        </div>
-      </div>
-    `).join('');
-  }
-
   window.deleteHistory = async function(id) {
     if (!confirm('この対局履歴を削除しますか？\nランキングも再計算されます。')) return;
     await deleteDoc(doc(db, "history", id));
@@ -658,8 +909,7 @@
     editIndex = idx;
     editDocId = history[idx].id;
     const h = history[idx];
-    const inputsDiv = document.getElementById('modal-inputs');
-    inputsDiv.innerHTML = `
+    document.getElementById('modal-inputs').innerHTML = `
       <div style="margin-bottom:14px;">
         <label>ウマ</label>
         <select id="modal-uma">
@@ -686,7 +936,7 @@
   window.saveEdit = async function() {
     const h = history[editIndex];
     const umaStr = document.getElementById('modal-uma').value;
-    let entries = h.results.map((r, i) => ({
+    const entries = h.results.map((r, i) => ({
       name: r.name,
       score: parseInt(document.getElementById(`modal-score-${i}`).value)
     }));
@@ -698,12 +948,13 @@
     }
 
     await setDoc(doc(db, "history", editDocId), {
-      date: h.date, uma: umaStr, results: calcPt(entries, umaStr), createdAt: h.createdAt
+      date: h.date, uma: umaStr, results: calcPt(entries, umaStr),
+      createdAt: h.createdAt, sessionId: h.sessionId || null
     });
 
     await recalcAllPt();
     closeModal();
-    alert('✅ 修正しました！');
+    alert('✅ 修正しました！セッション結果と総合順位も更新されました！');
   }
 
   async function recalcAllPt() {
