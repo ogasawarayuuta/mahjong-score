@@ -4,23 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>麻雀スコア管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Meiryo', sans-serif; background: #f5f5f5; color: #333; }
     header { background: #1a5c2a; color: white; text-align: center; padding: 16px; font-size: 20px; font-weight: bold; letter-spacing: 2px; }
 
     .tab-menu { display: flex; justify-content: space-around; background: #fff; border-bottom: 2px solid #1a5c2a; }
-    .tab-menu button { flex: 1; padding: 12px 4px; border: none; background: none; font-size: 12px; cursor: pointer; color: #666; font-weight: bold; white-space: nowrap; }
+    .tab-menu button { flex: 1; padding: 12px 4px; border: none; background: none; font-size: 11px; cursor: pointer; color: #666; font-weight: bold; white-space: nowrap; }
     .tab-menu button.active { color: #1a5c2a; border-bottom: 3px solid #1a5c2a; }
 
     .tab-content { display: none; padding: 16px 12px; max-width: 1000px; margin: 0 auto; }
     .tab-content.active { display: block; }
 
-    /* ランキング：スマホは1列 */
     .ranking-grid { display: flex; flex-direction: column; gap: 16px; }
     .ranking-section { margin-bottom: 8px; }
     .ranking-section h2 { text-align: center; font-size: 16px; margin-bottom: 12px; }
-
     .ranking-header { display: grid; grid-template-columns: 40px 1fr 70px; padding: 4px 12px; color: #999; font-size: 12px; }
     .ranking-row { display: grid; grid-template-columns: 40px 1fr 70px; align-items: center; padding: 12px; background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 14px; }
     .ranking-row.first { background: #1a5c2a; color: white; font-weight: bold; }
@@ -34,7 +33,6 @@
     input[type="text"], input[type="number"], select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 14px; -webkit-appearance: none; appearance: none; }
     .btn { width: 100%; padding: 14px; background: #1a5c2a; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; }
     .btn:active { background: #14481f; }
-
     .btn-small { width: auto; padding: 8px 16px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; }
     .btn-edit { background: #e67e22; }
     .btn-del { background: #c0392b; }
@@ -64,11 +62,30 @@
     .btn-cancel { background: #95a5a6; }
     .btn-save { background: #1a5c2a; }
 
-    /* PC：2列表示 */
+    /* 個人成績 */
+    .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat-box { background: #f9f9f9; border-radius: 10px; padding: 14px; text-align: center; }
+    .stat-box .stat-label { font-size: 12px; color: #999; margin-bottom: 6px; }
+    .stat-box .stat-value { font-size: 22px; font-weight: bold; color: #1a5c2a; }
+    .stat-box .stat-sub { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+    .rank-rate-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+    .rank-rate-box { border-radius: 10px; padding: 12px 6px; text-align: center; }
+    .rank-rate-box .rate-label { font-size: 11px; margin-bottom: 4px; font-weight: bold; }
+    .rank-rate-box .rate-value { font-size: 20px; font-weight: bold; }
+    .rank1 { background: #fff8e1; color: #f39c12; }
+    .rank2 { background: #e8f5e9; color: #27ae60; }
+    .rank3 { background: #e3f2fd; color: #2980b9; }
+    .rank4 { background: #fce4ec; color: #c0392b; }
+
+    .chart-container { position: relative; width: 100%; height: 250px; }
+
     @media (min-width: 600px) {
       .ranking-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
       .score-input-row { grid-template-columns: 1fr 1fr; }
       .modal-row { grid-template-columns: 1fr 1fr; }
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+      .chart-container { height: 300px; }
     }
   </style>
 </head>
@@ -77,9 +94,10 @@
 <header>🀄 麻雀スコア管理</header>
 
 <div class="tab-menu">
-  <button class="active" onclick="showTab('ranking', this)">🏆 ランキング</button>
-  <button onclick="showTab('input', this)">✏️ 対局入力</button>
-  <button onclick="showTab('players', this)">👤 プレイヤー</button>
+  <button class="active" onclick="showTab('ranking', this)">🏆 順位</button>
+  <button onclick="showTab('stats', this)">👤 個人成績</button>
+  <button onclick="showTab('input', this)">✏️ 入力</button>
+  <button onclick="showTab('players', this)">👥 管理</button>
   <button onclick="showTab('history', this)">📋 履歴</button>
 </div>
 
@@ -107,6 +125,17 @@
       <div id="avoid-ranking"></div>
     </div>
   </div>
+</div>
+
+<!-- 個人成績 -->
+<div id="tab-stats" class="tab-content">
+  <div class="card">
+    <h2>👤 プレイヤー選択</h2>
+    <select id="stats-player-select" onchange="renderStats()">
+      <option value="">-- プレイヤーを選んでください --</option>
+    </select>
+  </div>
+  <div id="stats-content"></div>
 </div>
 
 <!-- 対局入力 -->
@@ -160,7 +189,6 @@
   </div>
 </div>
 
-<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, setDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -181,18 +209,22 @@
   let history = [];
   let editIndex = -1;
   let editDocId = null;
+  let rankChart = null;
+  let ptChart = null;
 
   onSnapshot(collection(db, "players"), (snapshot) => {
     players = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderPlayerList();
     renderScoreInputs();
     renderRanking();
+    updateStatsSelect();
   });
 
-  onSnapshot(query(collection(db, "history"), orderBy("createdAt", "desc")), (snapshot) => {
+  onSnapshot(query(collection(db, "history"), orderBy("createdAt", "asc")), (snapshot) => {
     history = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     renderHistory();
     renderRanking();
+    renderStats();
   });
 
   window.showTab = function(name, btn) {
@@ -200,6 +232,213 @@
     document.querySelectorAll('.tab-menu button').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     btn.classList.add('active');
+    if (name === 'stats') renderStats();
+  }
+
+  function updateStatsSelect() {
+    const sel = document.getElementById('stats-player-select');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">-- プレイヤーを選んでください --</option>' +
+      players.map(p => `<option value="${p.name}" ${p.name === current ? 'selected' : ''}>${p.name}</option>`).join('');
+  }
+
+  window.renderStats = function() {
+    const name = document.getElementById('stats-player-select').value;
+    const container = document.getElementById('stats-content');
+
+    if (!name) {
+      container.innerHTML = '';
+      return;
+    }
+
+    // その人の対局履歴を抽出（古い順）
+    const myGames = [];
+    history.forEach(h => {
+      const r = h.results.find(r => r.name === name);
+      if (r) myGames.push({ date: h.date, rank: r.rank, pt: r.pt, score: r.score });
+    });
+
+    if (myGames.length === 0) {
+      container.innerHTML = '<div class="card"><p class="no-data">対局データがありません</p></div>';
+      return;
+    }
+
+    const totalGames = myGames.length;
+    const totalPt = myGames.reduce((s, g) => Math.round((s + g.pt) * 10) / 10, 0);
+    const avgRank = Math.round(myGames.reduce((s, g) => s + g.rank, 0) / totalGames * 10) / 10;
+    const rank1 = myGames.filter(g => g.rank === 1).length;
+    const rank2 = myGames.filter(g => g.rank === 2).length;
+    const rank3 = myGames.filter(g => g.rank === 3).length;
+    const rank4 = myGames.filter(g => g.rank === 4).length;
+    const rate1 = Math.round(rank1 / totalGames * 1000) / 10;
+    const rate2 = Math.round(rank2 / totalGames * 1000) / 10;
+    const rate3 = Math.round(rank3 / totalGames * 1000) / 10;
+    const rate4 = Math.round(rank4 / totalGames * 1000) / 10;
+
+    container.innerHTML = `
+      <!-- サマリー -->
+      <div class="card">
+        <h2>📊 成績サマリー</h2>
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-label">総対局数</div>
+            <div class="stat-value">${totalGames}</div>
+            <div class="stat-sub">局</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">累計pt</div>
+            <div class="stat-value" style="color:${totalPt >= 0 ? '#1a5c2a' : '#c0392b'}">${totalPt > 0 ? '+' : ''}${totalPt}</div>
+            <div class="stat-sub">pt</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">平均順位</div>
+            <div class="stat-value">${avgRank}</div>
+            <div class="stat-sub">位</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-label">4着回避率</div>
+            <div class="stat-value">${Math.round((1 - rank4 / totalGames) * 1000) / 10}</div>
+            <div class="stat-sub">%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 順位率 -->
+      <div class="card">
+        <h2>🎯 順位率</h2>
+        <div class="rank-rate-grid">
+          <div class="rank-rate-box rank1">
+            <div class="rate-label">🥇 1位</div>
+            <div class="rate-value">${rate1}%</div>
+            <div style="font-size:11px;margin-top:2px;">${rank1}回</div>
+          </div>
+          <div class="rank-rate-box rank2">
+            <div class="rate-label">🥈 2位</div>
+            <div class="rate-value">${rate2}%</div>
+            <div style="font-size:11px;margin-top:2px;">${rank2}回</div>
+          </div>
+          <div class="rank-rate-box rank3">
+            <div class="rate-label">🥉 3位</div>
+            <div class="rate-value">${rate3}%</div>
+            <div style="font-size:11px;margin-top:2px;">${rank3}回</div>
+          </div>
+          <div class="rank-rate-box rank4">
+            <div class="rate-label">💀 4位</div>
+            <div class="rate-value">${rate4}%</div>
+            <div style="font-size:11px;margin-top:2px;">${rank4}回</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 順位推移グラフ -->
+      <div class="card">
+        <h2>📈 順位推移</h2>
+        <div class="chart-container">
+          <canvas id="rankChart"></canvas>
+        </div>
+      </div>
+
+      <!-- pt推移グラフ -->
+      <div class="card">
+        <h2>💹 累計pt推移</h2>
+        <div class="chart-container">
+          <canvas id="ptChart"></canvas>
+        </div>
+      </div>
+    `;
+
+    // 順位推移グラフ
+    if (rankChart) rankChart.destroy();
+    const rankCtx = document.getElementById('rankChart').getContext('2d');
+    rankChart = new Chart(rankCtx, {
+      type: 'line',
+      data: {
+        labels: myGames.map((g, i) => `${i + 1}局`),
+        datasets: [{
+          label: '順位',
+          data: myGames.map(g => g.rank),
+          borderColor: '#1a5c2a',
+          backgroundColor: 'rgba(26,92,42,0.1)',
+          pointBackgroundColor: myGames.map(g => {
+            if (g.rank === 1) return '#f39c12';
+            if (g.rank === 2) return '#27ae60';
+            if (g.rank === 3) return '#2980b9';
+            return '#c0392b';
+          }),
+          pointRadius: 6,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            reverse: true,
+            min: 1,
+            max: 4,
+            ticks: {
+              stepSize: 1,
+              callback: v => `${v}位`
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.raw}位`
+            }
+          }
+        }
+      }
+    });
+
+    // 累計pt推移グラフ
+    if (ptChart) ptChart.destroy();
+    let cumPt = 0;
+    const cumPts = myGames.map(g => {
+      cumPt = Math.round((cumPt + g.pt) * 10) / 10;
+      return cumPt;
+    });
+
+    const ptCtx = document.getElementById('ptChart').getContext('2d');
+    ptChart = new Chart(ptCtx, {
+      type: 'line',
+      data: {
+        labels: myGames.map((g, i) => `${i + 1}局`),
+        datasets: [{
+          label: '累計pt',
+          data: cumPts,
+          borderColor: '#2980b9',
+          backgroundColor: 'rgba(41,128,185,0.1)',
+          pointBackgroundColor: cumPts.map(v => v >= 0 ? '#27ae60' : '#c0392b'),
+          pointRadius: 5,
+          tension: 0.3,
+          fill: true,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            ticks: {
+              callback: v => `${v}pt`
+            }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => `${ctx.raw > 0 ? '+' : ''}${ctx.raw}pt`
+            }
+          }
+        }
+      }
+    });
   }
 
   window.addPlayer = async function() {
@@ -378,12 +617,13 @@
   }
 
   function renderHistory() {
+    const reversed = [...history].reverse();
     const container = document.getElementById('history-container');
-    if (history.length === 0) {
+    if (reversed.length === 0) {
       container.innerHTML = '<div class="card"><p class="no-data">対局履歴がありません</p></div>';
       return;
     }
-    container.innerHTML = history.map((h, idx) => `
+    container.innerHTML = reversed.map((h, idx) => `
       <div class="card">
         <table class="history-table">
           <thead>
@@ -401,7 +641,7 @@
           </tbody>
         </table>
         <div class="history-actions">
-          <button class="btn-small btn-edit" onclick="openEditModal(${idx})">✏️ 修正</button>
+          <button class="btn-small btn-edit" onclick="openEditModal(${reversed.length - 1 - idx})">✏️ 修正</button>
           <button class="btn-small btn-del" onclick="deleteHistory('${h.id}')">🗑️ 削除</button>
         </div>
       </div>
@@ -472,7 +712,7 @@
       resetData[p.id] = { ...p, totalPt: 0, bestScore: 0, games: 0, tops: 0, fourths: 0 };
     });
 
-    const snap = await getDocs(query(collection(db, "history"), orderBy("createdAt", "desc")));
+    const snap = await getDocs(query(collection(db, "history"), orderBy("createdAt", "asc")));
     snap.docs.forEach(d => {
       const h = d.data();
       h.results.forEach(r => {
