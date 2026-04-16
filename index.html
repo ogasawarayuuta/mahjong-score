@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>麻雀スコア管理</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Meiryo', sans-serif; background: #f5f5f5; color: #333; }
+    header { background: #1a5c2a; color: white; text-align: center; padding: 20px; font-size: 22px; font-weight: bold; letter-spacing: 2px; }
+    .tab-menu { display: flex; justify-content: center; background: #fff; border-bottom: 2px solid #1a5c2a; flex-wrap: wrap; }
+    .tab-menu button { padding: 14px 20px; border: none; background: none; font-size: 14px; cursor: pointer; color: #666; font-weight: bold; }
+    .tab-menu button.active { color: #1a5c2a; border-bottom: 3px solid #1a5c2a; }
+    .tab-content { display: none; padding: 30px 20px; max-width: 1000px; margin: 0 auto; }
+    .tab-content.active { display: block; }
+    .ranking-section { margin-bottom: 40px; }
+    .ranking-section h2 { text-align: center; font-size: 18px; margin-bottom: 20px; }
+    .ranking-header { display: grid; grid-template-columns: 60px 1fr 100px; padding: 6px 16px; color: #999; font-size: 13px; }
+    .ranking-row { display: grid; grid-template-columns: 60px 1fr 100px; align-items: center; padding: 12px 16px; background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); font-size: 15px; }
+    .ranking-row.first { background: #1a5c2a; color: white; font-weight: bold; font-size: 17px; }
+    .rank-num { font-weight: bold; font-size: 18px; }
+    .pt-value { font-weight: bold; text-align: right; }
+    .four-col { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    .card { background: white; border-radius: 12px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
+    .card h2 { font-size: 17px; margin-bottom: 20px; color: #1a5c2a; border-left: 4px solid #1a5c2a; padding-left: 10px; }
+    label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; }
+    input[type="text"], input[type="number"], select { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-bottom: 14px; }
+    .btn { width: 100%; padding: 12px; background: #1a5c2a; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; }
+    .btn:hover { background: #14481f; }
+    .btn-small { width: auto; padding: 6px 14px; font-size: 13px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; color: white; }
+    .btn-edit { background: #e67e22; }
+    .btn-edit:hover { background: #ca6f1e; }
+    .btn-del { background: #c0392b; }
+    .btn-del:hover { background: #a93226; }
+    .player-list { list-style: none; }
+    .player-list li { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f9f9f9; border-radius: 8px; margin-bottom: 8px; font-size: 14px; }
+    .player-list li button { background: none; border: 1px solid #ccc; border-radius: 6px; padding: 4px 10px; cursor: pointer; color: #c0392b; font-size: 12px; }
+    .score-input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .history-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .history-table th { background: #1a5c2a; color: white; padding: 12px; font-size: 13px; text-align: center; }
+    .history-table td { padding: 10px 12px; font-size: 13px; text-align: center; border-bottom: 1px solid #eee; }
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-actions { display: flex; gap: 8px; justify-content: center; margin-top: 10px; margin-bottom: 20px; }
+    .no-data { text-align: center; color: #aaa; padding: 40px; font-size: 14px; }
+    .alert { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 10px 14px; font-size: 13px; margin-bottom: 14px; color: #856404; }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-overlay.active { display: flex; }
+    .modal { background: white; border-radius: 12px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .modal h3 { font-size: 18px; margin-bottom: 20px; color: #1a5c2a; border-left: 4px solid #1a5c2a; padding-left: 10px; }
+    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .modal-actions button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-cancel { background: #95a5a6; }
+    .btn-save { background: #1a5c2a; }
+    .loading { text-align: center; color: #999; padding: 20px; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<header>🀄 麻雀スコア管理</header>
+
+<div class="tab-menu">
+  <button class="active" onclick="showTab('ranking', this)">🏆 ランキング</button>
+  <button onclick="showTab('input', this)">✏️ 対局入力</button>
+  <button onclick="showTab('players', this)">👤 プレイヤー管理</button>
+  <button onclick="showTab('history', this)">📋 対局履歴</button>
+</div>
+
+<!-- ランキング -->
+<div id="tab-ranking" class="tab-content active">
+  <div class="four-col">
+    <div class="ranking-section">
+      <h2>🏅 個人スコア</h2>
+      <div class="ranking-header"><span>順位</span><span>個人名</span><span style="text-align:right">pt</span></div>
+      <div id="score-ranking"></div>
+    </div>
+    <div class="ranking-section">
+      <h2>⭐ 最高スコア</h2>
+      <div class="ranking-header"><span>順位</span><span>個人名</span><span style="text-align:right">点</span></div>
+      <div id="best-ranking"></div>
+    </div>
+    <div class="ranking-section">
+      <h2>🥇 最多トップ</h2>
+      <div class="ranking-header"><span>順位</span><span>個人名</span><span style="text-align:right">回</span></div>
+      <div id="top-ranking"></div>
+    </div>
+    <div class="ranking-section">
+      <h2>🛡️ 4着回避率</h2>
+      <div class="ranking-header"><span>順位</span><span>個人名</span><span style="text-align:right">%</span></div>
+      <div id="avoid-ranking"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 対局入力 -->
+<div id="tab-input" class="tab-content">
+  <div class="card">
+    <h2>⚙️ 対局設定</h2>
+    <label>ウマ</label>
+    <select id="uma-select">
+      <option value="5-10">5-10</option>
+      <option value="10-20">10-20</option>
+    </select>
+    <p style="font-size:12px; color:#999;">返し点：30000点固定</p>
+  </div>
+  <div class="card">
+    <h2>✏️ 点数入力</h2>
+    <div id="alert-box" class="alert" style="display:none"></div>
+    <div id="score-inputs"></div>
+    <button class="btn" onclick="calcScore()">✅ 点数を確定して記録</button>
+  </div>
+</div>
+
+<!-- プレイヤー管理 -->
+<div id="tab-players" class="tab-content">
+  <div class="card">
+    <h2>👤 プレイヤー登録</h2>
+    <label>名前</label>
+    <input type="text" id="player-name-input" placeholder="例）山田 太郎">
+    <button class="btn" onclick="addPlayer()">➕ 登録する</button>
+  </div>
+  <div class="card">
+    <h2>📋 登録済みプレイヤー</h2>
+    <ul class="player-list" id="player-list"></ul>
+  </div>
+</div>
+
+<!-- 対局履歴 -->
+<div id="tab-history" class="tab-content">
+  <div id="history-container"></div>
+</div>
+
+<!-- 修正モーダル -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ 対局結果を修正</h3>
+    <div id="modal-inputs"></div>
+    <p style="font-size:12px; color:#999; margin-top:-10px;">※合計が100,000点になるように入力してください</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-save" onclick="saveEdit()">💾 保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, addDoc, getDocs, deleteDoc, setDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBAoRkB3_nuUZMAJMVSH2qQftpvKI2rYsA",
+    authDomain: "mahjong-score-9ab43.firebaseapp.com",
+    projectId: "mahjong-score-9ab43",
+    storageBucket: "mahjong-score-9ab43.firebasestorage.app",
+    messagingSenderId: "1044351960023",
+    appId: "1:1044351960023:web:9206d6acefc49d034dc192"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  let players = [];
+  let history = [];
+  let editIndex = -1;
+  let editDocId = null;
+
+  // リアルタイムでプレイヤー取得
+  onSnapshot(collection(db, "players"), (snapshot) => {
+    players = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderPlayerList();
+    renderScoreInputs();
+    renderRanking();
+  });
+
+  // リアルタイムで履歴取得
+  onSnapshot(query(collection(db, "history"), orderBy("createdAt", "desc")), (snapshot) => {
+    history = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderHistory();
+    renderRanking();
+  });
+
+  // タブ切替
+  window.showTab = function(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab-menu button').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // プレイヤー登録
+  window.addPlayer = async function() {
+    const name = document.getElementById('player-name-input').value.trim();
+    if (!name) return alert('名前を入力してください');
+    if (players.find(p => p.name === name)) return alert('同じ名前が既に登録されています');
+    await addDoc(collection(db, "players"), {
+      name, totalPt: 0, bestScore: 0, games: 0, tops: 0, fourths: 0
+    });
+    document.getElementById('player-name-input').value = '';
+  }
+
+  window.deletePlayer = async function(id, name) {
+    if (!confirm(`${name} を削除しますか？`)) return;
+    await deleteDoc(doc(db, "players", id));
+  }
+
+  function renderPlayerList() {
+    const ul = document.getElementById('player-list');
+    if (players.length === 0) {
+      ul.innerHTML = '<p class="no-data">プレイヤーが登録されていません</p>';
+      return;
+    }
+    ul.innerHTML = players.map(p => {
+      const avoidRate = p.games > 0 ? Math.round((1 - p.fourths / p.games) * 1000) / 10 : '-';
+      return `<li>
+        👤 ${p.name}
+        <span style="font-size:12px;color:#999;">${p.games}局 / ${p.totalPt > 0 ? '+' : ''}${p.totalPt}pt / トップ${p.tops}回 / 4着回避${avoidRate}%</span>
+        <button onclick="deletePlayer('${p.id}', '${p.name}')">削除</button>
+      </li>`;
+    }).join('');
+  }
+
+  // 対局入力
+  function renderScoreInputs() {
+    const container = document.getElementById('score-inputs');
+    if (players.length < 4) {
+      container.innerHTML = '<p class="no-data">プレイヤーを4人以上登録してください</p>';
+      return;
+    }
+    let html = '<div class="score-input-row">';
+    for (let i = 0; i < 4; i++) {
+      html += `
+        <div>
+          <label>プレイヤー ${i+1}</label>
+          <select id="player-sel-${i}">
+            ${players.map(p => `<option value="${p.name}">${p.name}</option>`).join('')}
+          </select>
+          <label>最終点数</label>
+          <input type="number" id="score-${i}" placeholder="例）25000">
+        </div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+    players.slice(0, 4).forEach((p, i) => {
+      const sel = document.getElementById(`player-sel-${i}`);
+      if (sel) sel.value = p.name;
+    });
+  }
+
+  function getUmaArray(umaStr) {
+    return umaStr === '5-10' ? [10, 5, -5, -10] : [20, 10, -10, -20];
+  }
+
+  function calcPt(entries, umaStr) {
+    const uma = getUmaArray(umaStr);
+    const sorted = [...entries].sort((a, b) => b.score - a.score);
+    sorted.forEach((e, i) => {
+      e.pt = Math.round((e.score - 30000) / 1000 * 10) / 10 + uma[i];
+      e.rank = i + 1;
+    });
+    return sorted;
+  }
+
+  window.calcScore = async function() {
+    const umaStr = document.getElementById('uma-select').value;
+    const alertBox = document.getElementById('alert-box');
+    let entries = [];
+
+    for (let i = 0; i < 4; i++) {
+      const name = document.getElementById(`player-sel-${i}`).value;
+      const score = parseInt(document.getElementById(`score-${i}`).value);
+      if (isNaN(score)) {
+        alertBox.style.display = 'block';
+        alertBox.textContent = `プレイヤー${i+1}の点数を入力してください`;
+        return;
+      }
+      entries.push({ name, score });
+    }
+
+    const names = entries.map(e => e.name);
+    if (new Set(names).size !== 4) {
+      alertBox.style.display = 'block';
+      alertBox.textContent = '同じプレイヤーが重複しています';
+      return;
+    }
+
+    const total = entries.reduce((s, e) => s + e.score, 0);
+    if (total !== 100000) {
+      alertBox.style.display = 'block';
+      alertBox.textContent = `点数の合計が${total.toLocaleString()}点です（100,000点になるように入力してください）`;
+      return;
+    }
+
+    alertBox.style.display = 'none';
+    const results = calcPt(entries, umaStr);
+    const date = new Date().toLocaleDateString('ja-JP');
+
+    await addDoc(collection(db, "history"), {
+      date, uma: umaStr, results, createdAt: Date.now()
+    });
+
+    for (const e of results) {
+      const p = players.find(p => p.name === e.name);
+      if (p) {
+        await setDoc(doc(db, "players", p.id), {
+          ...p,
+          totalPt: Math.round((p.totalPt + e.pt) * 10) / 10,
+          bestScore: Math.max(p.bestScore, e.score),
+          games: p.games + 1,
+          tops: p.tops + (e.rank === 1 ? 1 : 0),
+          fourths: p.fourths + (e.rank === 4 ? 1 : 0)
+        });
+      }
+    }
+
+    alert(`✅ 対局を記録しました！\n\n` + results.map(e => `${e.rank}位 ${e.name}：${e.pt > 0 ? '+' : ''}${e.pt}pt`).join('\n'));
+    document.querySelectorAll('.tab-menu button')[0].click();
+  }
+
+  // ランキング
+  function renderRanking() {
+    const sorted = [...players].sort((a, b) => b.totalPt - a.totalPt);
+    document.getElementById('score-ranking').innerHTML = sorted.length === 0
+      ? '<p class="no-data">データがありません</p>'
+      : sorted.map((p, i) => `
+          <div class="ranking-row ${i === 0 ? 'first' : ''}">
+            <span class="rank-num">${i + 1}</span>
+            <span>👤 ${p.name}</span>
+            <span class="pt-value">${p.totalPt > 0 ? '+' : ''}${p.totalPt}</span>
+          </div>`).join('');
+
+    const bestSorted = [...players].filter(p => p.games > 0).sort((a, b) => b.bestScore - a.bestScore);
+    document.getElementById('best-ranking').innerHTML = bestSorted.length === 0
+      ? '<p class="no-data">データがありません</p>'
+      : bestSorted.map((p, i) => `
+          <div class="ranking-row ${i === 0 ? 'first' : ''}">
+            <span class="rank-num">${i + 1}</span>
+            <span>👤 ${p.name}</span>
+            <span class="pt-value">${p.bestScore.toLocaleString()}</span>
+          </div>`).join('');
+
+    const topSorted = [...players].filter(p => p.games > 0).sort((a, b) => b.tops - a.tops);
+    document.getElementById('top-ranking').innerHTML = topSorted.length === 0
+      ? '<p class="no-data">データがありません</p>'
+      : topSorted.map((p, i) => `
+          <div class="ranking-row ${i === 0 ? 'first' : ''}">
+            <span class="rank-num">${i + 1}</span>
+            <span>👤 ${p.name}</span>
+            <span class="pt-value">${p.tops}回</span>
+          </div>`).join('');
+
+    const avoidSorted = [...players].filter(p => p.games > 0).sort((a, b) => {
+      return (1 - b.fourths / b.games) - (1 - a.fourths / a.games);
+    });
+    document.getElementById('avoid-ranking').innerHTML = avoidSorted.length === 0
+      ? '<p class="no-data">データがありません</p>'
+      : avoidSorted.map((p, i) => {
+          const rate = Math.round((1 - p.fourths / p.games) * 1000) / 10;
+          return `
+            <div class="ranking-row ${i === 0 ? 'first' : ''}">
+              <span class="rank-num">${i + 1}</span>
+              <span>👤 ${p.name}</span>
+              <span class="pt-value">${rate}%</span>
+            </div>`;
+        }).join('');
+  }
+
+  // 履歴
+  function renderHistory() {
+    const container = document.getElementById('history-container');
+    if (history.length === 0) {
+      container.innerHTML = '<div class="card"><p class="no-data">対局履歴がありません</p></div>';
+      return;
+    }
+    container.innerHTML = history.map((h, idx) => `
+      <div class="card">
+        <table class="history-table">
+          <thead>
+            <tr><th colspan="4">${h.date}　ウマ：${h.uma}　返し：30000</th></tr>
+            <tr><th>順位</th><th>名前</th><th>点数</th><th>pt</th></tr>
+          </thead>
+          <tbody>
+            ${h.results.map(r => `
+              <tr>
+                <td>${r.rank}位</td>
+                <td>${r.name}</td>
+                <td>${r.score.toLocaleString()}</td>
+                <td>${r.pt > 0 ? '+' : ''}${r.pt}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="history-actions">
+          <button class="btn-small btn-edit" onclick="openEditModal(${idx})">✏️ 修正</button>
+          <button class="btn-small btn-del" onclick="deleteHistory('${h.id}')">🗑️ 削除</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // 履歴削除
+  window.deleteHistory = async function(id) {
+    if (!confirm('この対局履歴を削除しますか？\nランキングも再計算されます。')) return;
+    await deleteDoc(doc(db, "history", id));
+    await recalcAllPt();
+  }
+
+  // 修正モーダル
+  window.openEditModal = function(idx) {
+    editIndex = idx;
+    editDocId = history[idx].id;
+    const h = history[idx];
+    const inputsDiv = document.getElementById('modal-inputs');
+    inputsDiv.innerHTML = `
+      <div style="margin-bottom:14px;">
+        <label>ウマ</label>
+        <select id="modal-uma">
+          <option value="5-10" ${h.uma === '5-10' ? 'selected' : ''}>5-10</option>
+          <option value="10-20" ${h.uma === '10-20' ? 'selected' : ''}>10-20</option>
+        </select>
+      </div>
+      <div class="modal-row">
+        ${h.results.map((r, i) => `
+          <div>
+            <label>${r.name}</label>
+            <input type="number" id="modal-score-${i}" value="${r.score}">
+          </div>`).join('')}
+      </div>`;
+    document.getElementById('edit-modal').classList.add('active');
+  }
+
+  window.closeModal = function() {
+    document.getElementById('edit-modal').classList.remove('active');
+    editIndex = -1;
+    editDocId = null;
+  }
+
+  window.saveEdit = async function() {
+    const h = history[editIndex];
+    const umaStr = document.getElementById('modal-uma').value;
+    let entries = h.results.map((r, i) => ({
+      name: r.name,
+      score: parseInt(document.getElementById(`modal-score-${i}`).value)
+    }));
+
+    const total = entries.reduce((s, e) => s + e.score, 0);
+    if (total !== 100000) {
+      alert(`合計が${total.toLocaleString()}点です。100,000点になるように修正してください。`);
+      return;
+    }
+
+    await setDoc(doc(db, "history", editDocId), {
+      date: h.date, uma: umaStr, results: calcPt(entries, umaStr), createdAt: h.createdAt
+    });
+
+    await recalcAllPt();
+    closeModal();
+    alert('✅ 修正しました！');
+  }
+
+  // 全ptを履歴から再計算
+  async function recalcAllPt() {
+    const resetData = {};
+    players.forEach(p => {
+      resetData[p.id] = { ...p, totalPt: 0, bestScore: 0, games: 0, tops: 0, fourths: 0 };
+    });
+
+    const snap = await getDocs(query(collection(db, "history"), orderBy("createdAt", "desc")));
+    snap.docs.forEach(d => {
+      const h = d.data();
+      h.results.forEach(r => {
+        const p = players.find(p => p.name === r.name);
+        if (p && resetData[p.id]) {
+          const rd = resetData[p.id];
+          rd.totalPt = Math.round((rd.totalPt + r.pt) * 10) / 10;
+          rd.bestScore = Math.max(rd.bestScore, r.score);
+          rd.games++;
+          if (r.rank === 1) rd.tops++;
+          if (r.rank === 4) rd.fourths++;
+        }
+      });
+    });
+
+    for (const [id, data] of Object.entries(resetData)) {
+      await setDoc(doc(db, "players", id), data);
+    }
+  }
+
+</script>
+</body>
+</html>
